@@ -1,17 +1,9 @@
-import {
-  Box,
-  Divider,
-  FormControlLabel,
-  FormGroup,
-  Grid,
-  Input,
-  Switch,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Divider, Grid, Typography } from "@mui/material";
 import type { NextPage } from "next";
 import Image from "next/image";
 import { decode } from "he";
+
+import Filters from "../components/Filters";
 
 import useSWR from "swr";
 import { useMemo, useState } from "react";
@@ -20,14 +12,14 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 function Item({
   name,
-  image,
-  thumbnail,
-  yearPublished,
   objectId,
-  status,
-  stats,
+  plays,
   ranks,
   rating,
+  stats,
+  status,
+  thumbnail,
+  yearPublished,
 }: RestApi.CollectionItem): React.ReactElement {
   return (
     <>
@@ -35,12 +27,16 @@ function Item({
         <Grid
           item
           sm={4}
+          xl={3}
           p={1}
           sx={{
-            backgroundColor: "grey.300",
+            backgroundColor: "grey.200",
             display: "flex",
             flex: 1,
           }}
+          component="a"
+          href={`https://boardgamegeek.com/boardgame/${objectId}`}
+          target="_blank"
         >
           {thumbnail && (
             <Box
@@ -61,7 +57,7 @@ function Item({
             </Box>
           )}
         </Grid>
-        <Grid item sm={8}>
+        <Grid item sm={8} xl={9}>
           <Box paddingX={1}>
             <Box marginBottom={1}>
               <Typography
@@ -81,25 +77,25 @@ function Item({
                 {[
                   status.own ? "Owned" : null,
                   status.wantToBuy ? "Wanted" : null,
+                  status.wantToPlay ? "Want to Play" : null,
                 ]
                   .filter(Boolean)
-                  .join(", ")}
+                  .join(", ")}{" "}
               </Box>
-              <Box marginBottom={1}>
-                {stats.minPlayers}—{stats.maxPlayers} players
-              </Box>
-              <Box marginBottom={1}>
+              <Box>
+                <Box>
+                  • <strong>Plays</strong>: {plays} play{plays === 1 ? "" : "s"}
+                </Box>
+                <Box>
+                  • <strong>Player Count</strong>: {stats.minPlayers}—
+                  {stats.maxPlayers}
+                </Box>
                 {rating.average && (
-                  <>
-                    <Box>
-                      • Rating: {rating.average.toFixed(2)} (
-                      {rating.bayesAverage.toFixed(2)})
-                    </Box>
-                    <Box>• {rating.usersRated.toLocaleString()} users</Box>
-                  </>
+                  <Box>
+                    • <strong>Rating</strong>: {rating.average.toFixed(2)} (
+                    {rating.bayesAverage.toFixed(2)})
+                  </Box>
                 )}
-              </Box>
-              <Box marginBottom={1}>
                 {ranks
                   .filter(function (rank) {
                     return Boolean(rank.value);
@@ -107,31 +103,13 @@ function Item({
                   .map(function (rank, idx) {
                     return (
                       <Box key={idx}>
-                        • {rank.friendlyName} | {rank.value.toLocaleString()}
+                        • <strong>{rank.friendlyName}:</strong>{" "}
+                        {rank.value.toLocaleString()}
                       </Box>
                     );
                   })}
               </Box>
             </Box>
-            {/* <FormGroup>
-              <FormControlLabel
-                control={<Switch disabled checked={status.own} />}
-                label={<>Own</>}
-              />
-              <FormControlLabel
-                control={<Switch disabled checked={status.wantToPlay} />}
-                label={<>Want To Play</>}
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    disabled
-                    checked={status.wantToBuy || status.wishlist}
-                  />
-                }
-                label={<>Want To Buy</>}
-              />
-            </FormGroup> */}
           </Box>
         </Grid>
       </Grid>
@@ -147,16 +125,13 @@ const Home: NextPage = () => {
       revalidateOnFocus: false,
     }
   );
-  const [filters, setFilters] = useState<{
-    owned: boolean;
-    wanted: boolean;
-    players: number | null;
-    name: string | null;
-  }>({
-    owned: true,
-    wanted: false,
-    players: null,
+  const [filters, setFilters] = useState<BGShelf.Filters>({
+    minRating: 0,
     name: null,
+    owned: true,
+    notPlayed: false,
+    players: null,
+    wanted: false,
   });
   const nameFilter = useMemo(() => {
     return filters.name ? new RegExp(filters.name, "i") : "";
@@ -174,78 +149,40 @@ const Home: NextPage = () => {
           const meetsName: boolean = filters.name
             ? Boolean(item.name.match(nameFilter))
             : true;
-          return (owned || wanted) && meetsMinPlayers && meetsName;
+          const meetsNotPlayed = filters.notPlayed ? item.plays === 0 : true;
+          const meetsMinRating = filters.minRating
+            ? item.rating.average > filters.minRating
+            : true;
+          const meetsOwnedOrWanted = owned || wanted;
+          return (
+            meetsOwnedOrWanted &&
+            meetsMinPlayers &&
+            meetsName &&
+            meetsNotPlayed &&
+            meetsMinRating
+          );
         })
       : [];
   }, [filters, nameFilter, data?.data]);
   return (
     <Box>
       <Box m={2}>
-        <FormGroup sx={{ flexDirection: "row" }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={filters.owned}
-                onChange={(ev) =>
-                  setFilters({ ...filters, owned: ev.target.checked })
-                }
-              />
-            }
-            label={<>Own</>}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={filters.wanted}
-                onChange={(ev) =>
-                  setFilters({ ...filters, wanted: ev.target.checked })
-                }
-              />
-            }
-            label={<>Wanted</>}
-          />
-          <Box marginX={1}>
-            <TextField
-              type="number"
-              label="Player Count"
-              onChange={(ev) =>
-                setFilters({
-                  ...filters,
-                  players: Number(ev.target.value),
-                })
-              }
-            />
-          </Box>
-          <Box marginX={1}>
-            <TextField
-              type="text"
-              label="Game Name"
-              onChange={(ev) =>
-                setFilters({
-                  ...filters,
-                  name: ev.target.value,
-                })
-              }
-            />
-          </Box>
-        </FormGroup>
+        <Filters filters={filters} onChangeFilters={setFilters} />
       </Box>
-      <Grid container rowSpacing={1} columnSpacing={1}>
-        {filteredData.map((item, idx) => (
-          <Grid
-            item
-            key={idx}
-            xs={12}
-            sm={6}
-            md={4}
-            lg={3}
-            xl={2}
-            sx={{ display: "flex" }}
-          >
-            <Item {...item} />
-          </Grid>
-        ))}
-      </Grid>
+      <Divider />
+      <Box marginY={2} sx={{ textAlign: "right" }}>
+        {filteredData.length} games
+      </Box>
+      <Divider />
+      <Box marginY={2}>
+        <Grid container rowSpacing={2} columnSpacing={2}>
+          {filteredData.map((item, idx) => (
+            <Grid item key={idx} xs={12} sm={6} xl={4} sx={{ display: "flex" }}>
+              <Item {...item} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
     </Box>
   );
 };

@@ -1,4 +1,5 @@
 import "../styles/globals.css";
+import Head from "next/head";
 import type { AppProps } from "next/app";
 import { Box, ThemeProvider, createTheme, useMediaQuery } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
@@ -44,6 +45,9 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
   return (
     <ThemeProvider theme={theme}>
+      <Head>
+        <title>BGSHELF 2021</title>
+      </Head>
       <Box m={2}>
         <Component {...pageProps} />
       </Box>
