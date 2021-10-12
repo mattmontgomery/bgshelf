@@ -1,4 +1,11 @@
-import { Box, Divider, Grid, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  ButtonProps,
+  Divider,
+  Grid,
+  Typography,
+} from "@mui/material";
 import type { NextPage } from "next";
 import Image from "next/image";
 import { decode } from "he";
@@ -7,6 +14,8 @@ import Filters from "../components/Filters";
 
 import useSWR from "swr";
 import { useMemo, useState } from "react";
+
+import orderBy from "lodash.orderby";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -23,7 +32,13 @@ function Item({
 }: RestApi.CollectionItem): React.ReactElement {
   return (
     <>
-      <Grid container>
+      <Grid
+        container
+        sx={{
+          border: "1px solid",
+          borderColor: "grey.300",
+        }}
+      >
         <Grid
           item
           sm={4}
@@ -58,18 +73,23 @@ function Item({
           )}
         </Grid>
         <Grid item sm={8} xl={9}>
-          <Box paddingX={1}>
+          <Box padding={2}>
             <Box marginBottom={1}>
-              <Typography
-                variant="h6"
-                component="a"
-                href={`https://boardgamegeek.com/boardgame/${objectId}`}
-                target="_blank"
-              >
-                <>
-                  {decode(String(name))} ({yearPublished})
-                </>
-              </Typography>
+              <Grid container>
+                <Grid item md={8}>
+                  <Typography
+                    variant="h6"
+                    component="a"
+                    href={`https://boardgamegeek.com/boardgame/${objectId}`}
+                    target="_blank"
+                  >
+                    <>{decode(String(name))}</>
+                  </Typography>
+                </Grid>
+                <Grid item md={4} sx={{ textAlign: "right" }}>
+                  {yearPublished}
+                </Grid>
+              </Grid>
             </Box>
             <Divider />
             <Box marginY={1} sx={{ fontSize: 14 }}>
@@ -132,13 +152,20 @@ const Home: NextPage = () => {
     notPlayed: false,
     players: null,
     wanted: false,
+    yearPublished: null,
   });
+  const [sort, setSort] = useState<
+    {
+      field: keyof RestApi.CollectionItem;
+      direction: "asc" | "desc";
+    }[]
+  >([{ field: "name", direction: "asc" }]);
   const nameFilter = useMemo(() => {
     return filters.name ? new RegExp(filters.name, "i") : "";
   }, [filters.name]);
   const filteredData = useMemo<RestApi.CollectionItem[]>(() => {
-    return data?.data
-      ? data?.data.filter(function (item) {
+    const items = data?.data
+      ? data?.data.filter(function (item: RestApi.CollectionItem) {
           const owned = item.status.own && filters.owned;
           const wanted =
             (item.status.wantToBuy || item.status.wishlist) && filters.wanted;
@@ -154,24 +181,81 @@ const Home: NextPage = () => {
             ? item.rating.average > filters.minRating
             : true;
           const meetsOwnedOrWanted = owned || wanted;
+          const meetsYear = filters.yearPublished
+            ? Number(item.yearPublished) === filters.yearPublished
+            : true;
           return (
             meetsOwnedOrWanted &&
             meetsMinPlayers &&
             meetsName &&
             meetsNotPlayed &&
-            meetsMinRating
+            meetsMinRating &&
+            meetsYear
           );
         })
       : [];
-  }, [filters, nameFilter, data?.data]);
+    return orderBy(
+      items,
+      sort.map(({ field, direction }) => field),
+      sort.map(({ field, direction }) => direction)
+    );
+  }, [filters, nameFilter, sort, data?.data]);
+  const changeSortOrder = useMemo(() => {
+    const sortOperation: BGShelf.SortMethod = (field, direction) => {
+      setSort([
+        {
+          field,
+          direction,
+        },
+        ...sort.filter((sortOp) => sortOp.field !== field),
+      ]);
+    };
+    return sortOperation;
+  }, [sort]);
+  const sortMap = useMemo(() => {
+    return sort.reduce(
+      (prev: Partial<Record<BGShelf.SortKey, "asc" | "desc">>, curr) => {
+        prev[curr.field] = curr.direction;
+        return prev;
+      },
+      {}
+    );
+  }, [sort]);
   return (
     <Box>
       <Box m={2}>
         <Filters filters={filters} onChangeFilters={setFilters} />
       </Box>
       <Divider />
-      <Box marginY={2} sx={{ textAlign: "right" }}>
-        {filteredData.length} games
+      <Box marginY={2}>
+        <Grid container>
+          <Grid item md={10} sx={{ alignSelf: "center" }}>
+            <Button variant="text" disabled>
+              Sort
+            </Button>
+            <SortButton
+              onChangeSort={changeSortOrder}
+              direction={sortMap.name === "asc" ? "desc" : "asc"}
+              field="name"
+            >
+              Name
+            </SortButton>
+            <SortButton
+              onChangeSort={changeSortOrder}
+              direction={
+                sortMap.yearPublished === "asc" || !sortMap.yearPublished
+                  ? "desc"
+                  : "asc"
+              }
+              field="yearPublished"
+            >
+              Year
+            </SortButton>
+          </Grid>
+          <Grid item md={2} sx={{ textAlign: "right", alignSelf: "center" }}>
+            {filteredData.length} games
+          </Grid>
+        </Grid>
       </Box>
       <Divider />
       <Box marginY={2}>
@@ -186,5 +270,29 @@ const Home: NextPage = () => {
     </Box>
   );
 };
+
+function SortButton({
+  children,
+  direction,
+  field,
+  onChangeSort,
+  ...rest
+}: {
+  children: React.ReactNode;
+  direction: "asc" | "desc";
+  field: keyof RestApi.CollectionItem;
+  onChangeSort: (
+    field: keyof RestApi.CollectionItem,
+    direction: "asc" | "desc"
+  ) => void;
+} & ButtonProps): React.ReactElement {
+  return (
+    <Box marginX={1} sx={{ display: "inline-flex" }}>
+      <Button onClick={() => onChangeSort(field, direction)} {...rest}>
+        {children} ({direction === "asc" ? "A-Z" : "Z-A"})
+      </Button>
+    </Box>
+  );
+}
 
 export default Home;

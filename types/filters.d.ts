@@ -6,5 +6,11 @@ declare namespace BGShelf {
     owned: boolean;
     players: number | null;
     wanted: boolean;
+    yearPublished: number | null;
   };
+  declare type SortMethod = (
+    field: keyof RestApi.CollectionItem,
+    direction: "asc" | "desc"
+  ) => void;
+  declare type SortKey = keyof RestApi.CollectionItem;
 }

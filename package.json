@@ -17,6 +17,7 @@
     "he": "^1.2.0",
     "import": "^0.0.6",
     "ioredis": "^4.27.9",
+    "lodash.orderby": "^4.6.0",
     "next": "11.1.2",
     "react": "17.0.2",
     "react-dom": "17.0.2",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@types/ioredis": "^4.27.5",
+    "@types/lodash.orderby": "^4.6.6",
     "@types/react": "17.0.27",
     "eslint": "7.32.0",
     "eslint-config-next": "11.1.2",

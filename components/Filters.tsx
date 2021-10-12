@@ -1,13 +1,9 @@
 import {
   Box,
-  Divider,
   FormControlLabel,
   FormGroup,
-  Grid,
-  Input,
   Switch,
   TextField,
-  Typography,
 } from "@mui/material";
 
 export default function Filters({
@@ -85,6 +81,18 @@ export default function Filters({
               onChangeFilters({
                 ...filters,
                 minRating: Number(ev.target.value),
+              })
+            }
+          />
+        </Box>
+        <Box marginX={1}>
+          <TextField
+            type="number"
+            label="Year"
+            onChange={(ev) =>
+              onChangeFilters({
+                ...filters,
+                yearPublished: Number(ev.target.value),
               })
             }
           />

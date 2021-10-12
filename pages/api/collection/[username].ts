@@ -18,7 +18,7 @@ export default async function handler(
   if (!cachedData) {
     const data = await client.fetchCollection();
     returnData = data;
-    await redisClient.set(cacheKey, JSON.stringify(data), "EX", 3600);
+    await redisClient.set(cacheKey, JSON.stringify(data), "EX", 60 * 60 * 24); // 24 hour expiration
   } else {
     returnData = cachedData ? JSON.parse(cachedData) : null;
   }

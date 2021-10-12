@@ -83,7 +83,6 @@ export default class Client {
         }[];
       };
     }>(body);
-    console.log(JSON.stringify(jsonBody, null, 2));
     return jsonBody?.items?.item.map((item) => ({
       name: item.name.__text,
       yearPublished: item.yearpublished,
