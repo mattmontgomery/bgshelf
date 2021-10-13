@@ -1,4 +1,3 @@
-import bggClient, { BggCollectionResponse } from "bgg-xml-api-client";
 import { NextApiRequest, NextApiResponse } from "next";
 
 import Redis from "ioredis";
@@ -8,13 +7,13 @@ const redisClient = new Redis(process.env.REDIS_URL);
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<RestApi.Collection>
+  res: NextApiResponse<BGShelf.Collection>
 ): Promise<void> {
   const username = req.query.username.toString();
-  const cacheKey = `collection|stats|${username}`;
+  const cacheKey = `collection|stats|${username}|20211013`;
   const client = new Client(username);
   const cachedData = await redisClient.get(cacheKey);
-  let returnData: RestApi.CollectionItem[];
+  let returnData: BGShelf.CollectionItem[];
   if (!cachedData) {
     const data = await client.fetchCollection();
     returnData = data;
@@ -33,7 +32,7 @@ export default async function handler(
     return;
   }
   res.json({
-    data: returnData as RestApi.CollectionItem[],
+    data: returnData as BGShelf.CollectionItem[],
     meta: { username, inCache: !!cachedData },
   });
 }

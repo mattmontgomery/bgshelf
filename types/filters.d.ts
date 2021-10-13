@@ -8,9 +8,8 @@ declare namespace BGShelf {
     wanted: boolean;
     yearPublished: number | null;
   };
-  declare type SortMethod = (
-    field: keyof RestApi.CollectionItem,
-    direction: "asc" | "desc"
-  ) => void;
-  declare type SortKey = keyof RestApi.CollectionItem;
+  declare type SortMethod = (field: SortKey, direction: SortDirection) => void;
+  declare type SortProps = { field: SortKey; direction: SortDirection };
+  declare type SortKey = keyof BGShelf.CollectionItem;
+  declare type SortDirection = "asc" | "desc";
 }

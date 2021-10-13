@@ -29,7 +29,8 @@ function Item({
   status,
   thumbnail,
   yearPublished,
-}: RestApi.CollectionItem): React.ReactElement {
+  rank_boardgame,
+}: BGShelf.CollectionItem): React.ReactElement {
   return (
     <>
       <Grid
@@ -43,7 +44,6 @@ function Item({
           item
           sm={4}
           xl={3}
-          p={1}
           sx={{
             backgroundColor: "grey.200",
             display: "flex",
@@ -69,6 +69,20 @@ function Item({
                 alt={name}
                 objectFit="contain"
               />
+              {rank_boardgame && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: 0,
+                    right: 0,
+                    padding: 1,
+                    backgroundColor: "RGBA(0,0,0,0.6)",
+                    color: "white",
+                  }}
+                >
+                  {rank_boardgame}
+                </Box>
+              )}
             </Box>
           )}
         </Grid>
@@ -138,7 +152,7 @@ function Item({
 }
 
 const Home: NextPage = () => {
-  const { data } = useSWR<RestApi.Collection>(
+  const { data, isValidating } = useSWR<BGShelf.Collection>(
     "/api/collection/moonty",
     fetcher,
     {
@@ -154,18 +168,15 @@ const Home: NextPage = () => {
     wanted: false,
     yearPublished: null,
   });
-  const [sort, setSort] = useState<
-    {
-      field: keyof RestApi.CollectionItem;
-      direction: "asc" | "desc";
-    }[]
-  >([{ field: "name", direction: "asc" }]);
+  const [sort, setSort] = useState<BGShelf.SortProps[]>([
+    { field: "name", direction: "asc" },
+  ]);
   const nameFilter = useMemo(() => {
     return filters.name ? new RegExp(filters.name, "i") : "";
   }, [filters.name]);
-  const filteredData = useMemo<RestApi.CollectionItem[]>(() => {
+  const filteredData = useMemo<BGShelf.CollectionItem[]>(() => {
     const items = data?.data
-      ? data?.data.filter(function (item: RestApi.CollectionItem) {
+      ? data?.data.filter(function (item: BGShelf.CollectionItem) {
           const owned = item.status.own && filters.owned;
           const wanted =
             (item.status.wantToBuy || item.status.wishlist) && filters.wanted;
@@ -251,9 +262,20 @@ const Home: NextPage = () => {
             >
               Year
             </SortButton>
+            <SortButton
+              onChangeSort={changeSortOrder}
+              direction={
+                sortMap.rank_boardgame === "desc" || !sortMap.rank_boardgame
+                  ? "asc"
+                  : "desc"
+              }
+              field="rank_boardgame"
+            >
+              BGG Ranking
+            </SortButton>
           </Grid>
           <Grid item md={2} sx={{ textAlign: "right", alignSelf: "center" }}>
-            {filteredData.length} games
+            {isValidating ? "Loading" : filteredData.length} games
           </Grid>
         </Grid>
       </Box>
@@ -279,13 +301,9 @@ function SortButton({
   ...rest
 }: {
   children: React.ReactNode;
-  direction: "asc" | "desc";
-  field: keyof RestApi.CollectionItem;
-  onChangeSort: (
-    field: keyof RestApi.CollectionItem,
-    direction: "asc" | "desc"
-  ) => void;
-} & ButtonProps): React.ReactElement {
+  onChangeSort: BGShelf.SortMethod;
+} & ButtonProps &
+  BGShelf.SortProps): React.ReactElement {
   return (
     <Box marginX={1} sx={{ display: "inline-flex" }}>
       <Button onClick={() => onChangeSort(field, direction)} {...rest}>
