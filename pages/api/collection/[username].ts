@@ -3,12 +3,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Redis from "ioredis";
 import Client from "../../../lib/client";
 
-const redisClient = new Redis(process.env.REDIS_URL);
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<BGShelf.Collection>
 ): Promise<void> {
+  const redisClient = new Redis(process.env.REDIS_URL);
   const username = req.query.username.toString();
   const cacheKey = `collection|stats|${username}|20211013`;
   const client = new Client(username);
@@ -21,6 +20,7 @@ export default async function handler(
   } else {
     returnData = cachedData ? JSON.parse(cachedData) : null;
   }
+  redisClient.disconnect();
 
   if (!returnData) {
     res.status(404);

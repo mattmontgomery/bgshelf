@@ -3,12 +3,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Redis from "ioredis";
 import Client from "../../../lib/client";
 
-const redisClient = new Redis(process.env.REDIS_URL);
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<BGShelf.ThingResponse>
 ): Promise<void> {
+  const redisClient = new Redis(process.env.REDIS_URL);
   const thingIds: number[] = req.query.id
     .toString()
     .split(",")
@@ -42,6 +41,7 @@ export default async function handler(
       ); // 1 year expiration for things
     })
   );
+  redisClient.disconnect();
   res.json({
     data: [...thingsInCache, ...things],
     meta: {

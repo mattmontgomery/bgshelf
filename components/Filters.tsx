@@ -53,6 +53,7 @@ export default function Filters({
           <TextField
             type="number"
             label="Player Count"
+            name="playerCount"
             onChange={(ev) =>
               onChangeFilters({
                 ...filters,
@@ -65,6 +66,7 @@ export default function Filters({
           <TextField
             type="text"
             label="Game Name"
+            name="gameName"
             onChange={(ev) =>
               onChangeFilters({
                 ...filters,
@@ -77,6 +79,7 @@ export default function Filters({
           <TextField
             type="number"
             label="Min. Rating"
+            name="minRating"
             onChange={(ev) =>
               onChangeFilters({
                 ...filters,
@@ -89,6 +92,7 @@ export default function Filters({
           <TextField
             type="number"
             label="Year"
+            name="year"
             onChange={(ev) =>
               onChangeFilters({
                 ...filters,

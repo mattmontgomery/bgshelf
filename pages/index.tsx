@@ -37,7 +37,7 @@ function Item({
         container
         sx={{
           border: "1px solid",
-          borderColor: "grey.300",
+          borderColor: "background.paper",
         }}
       >
         <Grid
@@ -45,7 +45,7 @@ function Item({
           sm={4}
           xl={3}
           sx={{
-            backgroundColor: "grey.200",
+            backgroundColor: "background.paper",
             display: "flex",
             flex: 1,
           }}
@@ -80,7 +80,7 @@ function Item({
                     color: "white",
                   }}
                 >
-                  {rank_boardgame}
+                  {rank_boardgame?.toLocaleString()}
                 </Box>
               )}
             </Box>
@@ -207,8 +207,8 @@ const Home: NextPage = () => {
       : [];
     return orderBy(
       items,
-      sort.map(({ field, direction }) => field),
-      sort.map(({ field, direction }) => direction)
+      sort.map(({ field }) => field),
+      sort.map(({ direction }) => direction)
     );
   }, [filters, nameFilter, sort, data?.data]);
   const changeSortOrder = useMemo(() => {
